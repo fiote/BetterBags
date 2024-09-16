@@ -45,6 +45,19 @@ function DB:GetBagView(kind)
   return DB.data.profile.views[kind]
 end
 
+
+---@param index number
+function DB:SetLastOpenTab(index)
+  DB.data.profile.lastOpenTab = index
+end
+
+---@param guid string
+---@return boolean
+function DB:GetLastOpenTab()  
+  return DB.data.profile.lastOpenTab or const.BANK_TAB.BANK
+end
+
+
 ---@param kind BagKind
 ---@return boolean
 function DB:GetMarkRecentItems(kind)
