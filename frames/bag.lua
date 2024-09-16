@@ -79,6 +79,9 @@ local themeConfig = addon:GetModule('ThemeConfig')
 ---@class Themes: AceModule
 local themes = addon:GetModule('Themes')
 
+---@class Database: AceModule
+local db = addon:GetModule('Database')
+
 ---@class WindowGroup: AceModule
 local windowGroup = addon:GetModule('WindowGroup')
 
@@ -195,10 +198,25 @@ function bagFrame.bagProto:Show(ctx)
       self:ShowBankAndReagentTabs()
     end
    self.moneyFrame:Update()
+   self:OpenLastTab(ctx)
   end
 
   self.frame:Show()
   ItemButtonUtil.TriggerEvent( ItemButtonUtil.Event.ItemContextChanged )
+end
+
+function bagFrame.bagProto:OpenLastTab(ctx)  
+  local lastOpenTab = db:GetLastOpenTab()
+
+  if lastOpenTab == const.BANK_TAB.BANK then
+    self:SwitchToBank(ctx)
+  elseif lastOpenTab == const.BANK_TAB.REAGENT then
+    self:SwitchToReagentBank(ctx)
+  else 
+    self:SwitchToAccountBank(ctx, lastOpenTab)
+  end
+
+  self.tabs:SetTabByID(ctx, lastOpenTab)
 end
 
 ---@param ctx Context
@@ -369,9 +387,15 @@ function bagFrame.bagProto:SetTitle(text)
   themes:SetTitle(self.frame, text)
 end
 
+---@param bagTab BankTab
+function bagFrame.bagProto:SetBankTab(bankTab)
+  self.bankTab = bankTab
+  db:SetLastOpenTab(bankTab)
+end
+
 ---@param ctx Context
 function bagFrame.bagProto:SwitchToBank(ctx)
-  self.bankTab = const.BANK_TAB.BANK
+  self:SetBankTab(const.BANK_TAB.BANK)
   BankFrame.selectedTab = 1
   self:SetTitle(L:G("Bank"))
   self.currentItemCount = -1
@@ -390,7 +414,7 @@ function bagFrame.bagProto:SwitchToReagentBank(ctx)
     StaticPopup_Show("CONFIRM_BUY_REAGENTBANK_TAB")
     return false
   end
-  self.bankTab = const.BANK_TAB.REAGENT
+  self:SetBankTab(const.BANK_TAB.REAGENT)
   BankFrame.selectedTab = 2
   self:SetTitle(L:G("Reagent Bank"))
   self.currentItemCount = -1
@@ -407,7 +431,7 @@ end
 ---@param tabIndex number
 ---@return boolean
 function bagFrame.bagProto:SwitchToAccountBank(ctx, tabIndex)
-  self.bankTab = tabIndex
+  self:SetBankTab(tabIndex)
   BankFrame.selectedTab = 1
   BankFrame.activeTabIndex = 3
   local tabData = C_Bank.FetchPurchasedBankTabData(Enum.BankType.Account)
